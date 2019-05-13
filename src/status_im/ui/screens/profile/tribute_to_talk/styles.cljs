@@ -98,6 +98,24 @@
   {:typography :main-medium
    :color      colors/gray})
 
+(def personalized-message-container
+  {:flex-grow         1
+   :align-items       :center
+   :margin-horizontal 16
+   :justify-content   :flex-start})
+
+(def personalized-message-title
+  {:margin-top    24
+   :margin-bottom 10
+   :align-self    :flex-start})
+
+(def personalized-message-input
+  {:border-radius       8
+   :background-color    colors/gray-lighter
+   :text-align-vertical :top
+   :padding-horizontal  16
+   :padding-vertical    16})
+
 (def edit-view-message-container
   {:border-radius       8
    :background-color    colors/blue-light
@@ -202,29 +220,22 @@
    :width             238
    :border-color      colors/gray-lighter})
 
-(defn chat-bubble [tribute-sender?]
-  {:background-color   (if tribute-sender? colors/blue-light colors/blue)
-   :padding-horizontal 12
-   :padding-vertical   6
-   :margin-top         4
-   :border-radius      8})
-
-(def pay-to-chat-bubble
+(def chat-sample-bubble
   {:background-color   colors/blue-light
    :padding-horizontal 12
-   :padding-vertical   8
+   :padding-top        8
    :margin-top         4
    :border-radius      8})
 
 (def pay-to-chat-container
-  {:justify-content :center
+  {:justify-content :flex-start
    :align-items     :center
    :flex-direction  :row
-   :padding-top     12
-   :padding-bottom  4})
+   :height          44})
 
 (def pay-to-chat-text
-  {:color      colors/blue})
+  {:typography :main-medium
+   :color      colors/blue})
 
 (defn payment-status-icon [pending?]
   {:width 24
@@ -278,3 +289,4 @@
   {:height           1
    :background-color colors/gray-lighter
    :align-self       :stretch})
+
