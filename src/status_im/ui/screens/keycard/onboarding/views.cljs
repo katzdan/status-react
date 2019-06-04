@@ -106,7 +106,10 @@
                                      :justify-content :center
                                      :width           40
                                      :height          40}
-                         [react/text {:style {:typography :title}}
+                         [react/text {:style {:typography  :title
+                                              :opacity     0.8
+                                              :text-align  :center
+                                              :line-height 20}}
                           number]]
                         [react/view {:align-items     :flex-start
                                      :justify-content :flex-start
