@@ -370,3 +370,8 @@
 
 (defview chat-modal []
   [chat-root true])
+
+(defview select-chat []
+  [react/view {:style {:align-items :center :justify-content :center :flex 1}}
+   [react/text {:style style/decline-chat}
+    "Select chat to start messaging"]])
