@@ -202,8 +202,9 @@
     [react/view {:style {:flex-direction  :row
                          :justify-content :flex-start
                          :align-items     :flex-start}}
-     [react/view {:style (styles/icon-view colors/blue)}
-      [icons/icon :icons/logo {:color colors/white :width 20 :height 20}]]
+     [icons/icon :icons/logo {:container-style (styles/icon-view colors/blue)
+                              :width           40
+                              :height          40}]
      [react/view {:style {:margin-left 16 :justify-content :flex-start}}
       [react/view {:style {:justify-content :center
                            :align-items :center}}

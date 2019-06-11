@@ -165,9 +165,10 @@
                            :height 24})
     :accessibility-label accessibility-label}
    [react/image {:source {:uri (keyword (clojure.core/name name))}
-                 :style  {:tint-color (match-color color)
-                          :width      (or width 24)
-                          :height     (or height 24)}}]])
+                 :style  (cond-> {:width  (or width 24)
+                                  :height (or height 24)}
+                           color
+                           (assoc :tint-color (match-color color)))}]])
 
 (defn icon
   ([name] (icon name nil))
