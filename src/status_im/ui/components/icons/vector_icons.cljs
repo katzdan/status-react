@@ -80,7 +80,7 @@
      :main-icons/paste             (js/require "./resources/icons/main/paste.svg")
      :main-icons/password          (js/require "./resources/icons/main/password.svg")
      :main-icons/photo             (js/require "./resources/icons/main/photo.svg")
-     :main-icons/private-chat      (js/require "./resources/icons/main/private_chat.svg")
+     :main-icons/one-on-one-chat   (js/require "./resources/icons/main/private_chat.svg")
      :main-icons/profile           (js/require "./resources/icons/main/profile.svg")
      :main-icons/public-chat       (js/require "./resources/icons/main/public_chat.svg")
      :main-icons/qr                (js/require "./resources/icons/main/qr.svg")
@@ -161,8 +161,8 @@
   [react/view
    {:style               (or
                           container-style
-                          {:width  24
-                           :height 24})
+                          {:width  (or width 24)
+                           :height (or height 24)})
     :accessibility-label accessibility-label}
    [react/image {:source {:uri (keyword (clojure.core/name name))}
                  :style  (cond-> {:width  (or width 24)
@@ -175,3 +175,9 @@
   ([name options]
    (let [icon-fn (if platform/desktop? desktop-icon mobile-icon)]
      [icon-fn name options])))
+
+(defn tiny-icon
+  ([name] (tiny-icon name {}))
+  ([name options]
+   (icon name (merge {:width 16 :height 16}
+                     options))))
