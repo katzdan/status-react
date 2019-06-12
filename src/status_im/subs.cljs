@@ -163,6 +163,9 @@
 ;;ethereum
 (reg-root-key-sub :ethereum/current-block :ethereum/current-block)
 
+;;intro-wizard
+(reg-root-key-sub :intro-wizard :intro-wizard)
+
 ;;GENERAL ==============================================================================================================
 
 (re-frame/reg-sub
@@ -1868,10 +1871,3 @@
                             (or (string/blank? screen-snt-amount)
                                 (#{"0" "0.0" "0.00"} screen-snt-amount)
                                 (string/ends-with? screen-snt-amount ".")))))))))
-
-;; INTRO WIZARD
-(re-frame/reg-sub
- :intro-wizard
- (fn [db]
-   (:intro-wizard db)))
-
