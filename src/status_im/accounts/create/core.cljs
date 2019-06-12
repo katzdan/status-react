@@ -135,12 +135,9 @@
          _ (log/info "#step-forward" step)]
 
     (cond (= step 7)
-          (create-account cofx)
-          #_(fx/merge cofx
-                      (navigation/navigate-to-cofx :welcome nil)
-                      create-account)
-          #_(fx/merge {:db (dissoc db :intro-wizard)}
-                      (navigation/navigate-to-cofx :welcome nil))
+          (fx/merge {:db (dissoc db :intro-wizard)}
+                    (when (not skip?))
+                    (navigation/navigate-to-cofx :home nil))
           (= step 1)
           {:db (assoc-in db [:intro-wizard :generating-keys?] true)
            :intro-wizard/new-onboarding {:n 5 :mnemonic-length 12}}
@@ -160,6 +157,9 @@
                   (log/info "step-forward else")
                   (fx/merge {:db (assoc-in db [:intro-wizard :step]
                                            (inc step))}
+                            (when (and (= step 5)
+                                       (not (:accounts/login db)))
+                              (create-account cofx))
                             (navigation/navigate-to-cofx :intro-wizard nil))))))
 
 (fx/defn on-account-created
@@ -200,7 +200,8 @@
                 (add-account account)
                 (when login?
                   (log/info "#before user-login" (:intro-wizard db))
-                  (accounts.login/user-login true))))))
+                  (accounts.login/user-login true))
+                (intro-step-forward {})))))
 
 (re-frame/reg-fx
  :intro-wizard/new-onboarding
