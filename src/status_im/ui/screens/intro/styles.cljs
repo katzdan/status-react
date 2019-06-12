@@ -80,7 +80,7 @@
    :icon-size 46})
 
 (def password-text-input
-  {:font-size    20
+  {:font-size    22
    :margin-top   60
    :line-height  24
    :font-weight  "600"})

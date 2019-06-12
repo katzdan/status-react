@@ -26,7 +26,7 @@
 (defview learn-more-sheet []
   (letsubs [{:keys [title content]} [:bottom-sheet/options]]
     [react/view {:style {:padding 16}}
-     [react/view {:style {:flex-direction :row :margin-bottom 16}}
+     [react/view {:style {:align-items :center :flex-direction :row :margin-bottom 16}}
       [vector-icons/icon :main-icons/info {:color colors/blue
                                            :container-style {:margin-right 13}}]
       [react/text {:style styles/learn-more-title} title]]

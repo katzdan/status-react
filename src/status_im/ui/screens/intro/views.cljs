@@ -3,6 +3,7 @@
   (:require [status-im.ui.components.react :as react]
             [re-frame.core :as re-frame]
             [status-im.react-native.resources :as resources]
+            [status-im.privacy-policy.core :as privacy-policy]
             [status-im.ui.components.icons.vector-icons :as vector-icons]
             [status-im.utils.identicon :as identicon]
             [status-im.ui.components.radio :as radio]
@@ -16,8 +17,7 @@
             [status-im.ui.screens.intro.styles :as styles]
             [status-im.ui.components.toolbar.view :as toolbar]
             [status-im.i18n :as i18n]
-            [status-im.ui.components.status-bar.view :as status-bar]
-            [status-im.ui.screens.privacy-policy.views :as privacy-policy]))
+            [status-im.ui.components.status-bar.view :as status-bar]))
 
 (defn dots-selector [{:keys [on-press n selected color]}]
   [react/view {:style (styles/dot-selector n)}
@@ -42,8 +42,7 @@
                            :shows-vertical-scroll-indicator false
                            :shows-horizontal-scroll-indicator false
                            :pinch-gesture-enabled false
-                           :on-scroll #(let [x (.-nativeEvent.contentOffset.x %)
-                                             _ (log/info "#scroll" x view-width)]
+                           :on-scroll #(let [x (.-nativeEvent.contentOffset.x %)]
                                          (cond (> x max-width)
                                                (.scrollTo @scroll-view-ref (clj->js {:x 0}))
                                                (< x 0)
@@ -89,7 +88,12 @@
                                  :on-press    #(re-frame/dispatch [:accounts.recover.ui/recover-account-button-pressed])
                                  :label       (i18n/label :t/access-key)
                                  :background? false}]
-      [react/i18n-text {:style styles/welcome-text-bottom-note :key :intro-privacy-policy-note}]
+      [react/nested-text
+       {:style styles/welcome-text-bottom-note}
+       (i18n/label :t/intro-privacy-policy-note1)
+       [{:style (assoc styles/welcome-text-bottom-note :color colors/blue)
+         :on-press privacy-policy/open-privacy-policy-link!}
+        (i18n/label :t/intro-privacy-policy-note2)]]
       #_[privacy-policy/privacy-policy-button]]]))
 
 (defn generate-key []
@@ -98,8 +102,10 @@
    {:image (resources/get-image :sample-key)
     :width 154 :height 140}])
 
-(defn choose-key [{:keys [accounts selected-pubkey] :as wizard-state}]
-  [react/view {:style {:margin-top 110}}
+(defn choose-key [{:keys [accounts selected-pubkey] :as wizard-state} view-height]
+  [react/scroll-view {:content-container-style {:flex 1
+                                                :justify-content :flex-end
+                                                :margin-bottom (/ view-height 12)}}
    (for [acc accounts]
      (let [selected? (= (:pubkey acc) selected-pubkey)]
        ^{:key (:pubkey acc)}
@@ -124,7 +130,29 @@
             (:pubkey acc)]]]
          [radio/radio selected?]]]))])
 
-(defn select-key-storage [{:keys [accounts selected-storage-type] :as wizard-state}]
+(defn storage-entry [{:keys [type icon title desc]} selected-storage-type]
+  (let [selected? (= type selected-storage-type)]
+    [react/view
+     [react/view {:style {:padding-top 14 :padding-bottom 4}}
+      [react/text {:style (assoc styles/wizard-text :text-align :left :margin-left 16)}
+       (i18n/label type)]]
+     [react/touchable-highlight
+      {:on-press #(re-frame/dispatch [:intro-wizard/on-key-storage-selected type])}
+      [react/view (assoc (styles/list-item selected?)
+                         :align-items :flex-start
+                         :padding-top 20
+                         :padding-bottom 12)
+       [vector-icons/icon icon {:color (if selected? colors/blue colors/gray)
+                                :width 24 :height 24}]
+       [react/view {:style {:margin-horizontal 16 :flex 1}}
+        [react/view {:style {:margin-top -4}}
+         [react/text {:style (assoc styles/wizard-text :font-weight "500" :color colors/black :text-align :left)}
+          (i18n/label title)]]
+        [react/text {:style (assoc styles/wizard-text :text-align :left)}
+         (i18n/label desc)]]
+       [radio/radio selected?]]]]))
+
+(defn select-key-storage [{:keys [selected-storage-type] :as wizard-state} view-height]
   (let [storage-types [{:type :default
                         :icon :main-icons/mobile
                         :title :this-device
@@ -132,61 +160,47 @@
                        {:type :advanced
                         :icon :main-icons/keycard-logo
                         :title :keycard
-                        :desc :keycard-desc}]]
-    [react/view {:style {:margin-top 84}}
-     (for [{:keys [type icon title desc]} storage-types]
-       (let [selected? (= type selected-storage-type)]
-         ^{:key type}
-         [react/view
-          [react/text {:style (assoc styles/wizard-text :text-align :left
-                                     :margin-left 16 :margin-bottom 4)}
-           (i18n/label type)]
-          [react/touchable-highlight
-           {:on-press #(re-frame/dispatch [:intro-wizard/on-key-storage-selected type])}
-           [react/view {:style (assoc (styles/list-item selected?)
-                                      :align-items :flex-start
-                                      :margin-bottom 30
-                                      :padding-vertical 16)}
-            [vector-icons/icon icon {:color (if selected? colors/blue colors/gray)}]
-            [react/view {:style {:margin-horizontal 16 :flex 1}}
-             [react/text {:style (assoc styles/wizard-text :font-weight "500" :color colors/black :text-align :left)}
-              (i18n/label title)]
-             [react/text {:style (assoc styles/wizard-text :text-align :left)}
-              (i18n/label desc)]]
-            [radio/radio selected?]]]]))]))
+                        :desc :keycard-desc}]
+        _ (log/info "#2" view-height)]
+    [react/view {:style {:flex 1
+                         :justify-content :flex-end
+                         :margin-bottom (+ (- 320 244) (/ view-height 12))}}
+     [storage-entry (first storage-types) selected-storage-type]
+     [react/view {:style {:min-height 16 :max-height 16}}]
+     [storage-entry (second storage-types) selected-storage-type]]))
 
 (defn numpad-container [key-code confirm-failure?]
   (let [selected (into (hash-set) (range (count key-code)))]
-    [react/view
-     [react/view {:style {:margin-bottom 32 :align-items :center}}
-      [react/text {:style (assoc styles/wizard-text :color colors/red
-                                 :margin-bottom 16)}
-       (if confirm-failure? (i18n/label :t/passcode-error) " ")]
+    [react/view {:style {:flex 1 :justify-content :flex-end}}
+     [react/view {:style {:justify-content :flex-end
+                          :margin-bottom 32
+                          :align-items :center}}
+      (if confirm-failure?
+        [react/text {:style (assoc styles/wizard-text :color colors/red
+                                   :margin-bottom 16)} (i18n/label :t/passcode-error)])
       [dots-selector {:n 6 :selected selected :color (if confirm-failure? colors/red colors/blue)}]]
      [numpad/number-pad {:on-press #(re-frame/dispatch [:intro-wizard/code-symbol-pressed %])
                          :hide-dot? true}]
-     [react/text {:style (assoc styles/wizard-text :margin-top 32)} (i18n/label :t/you-will-need-this-code)]]))
+     [react/text {:style (assoc styles/wizard-text :margin-top 8)} (i18n/label :t/you-will-need-this-code)]]))
+
+(defn password-container []
+  [react/view {:style {:flex 1 :align-items :center}}
+   [react/view {:style {:justify-content :center :flex 1}}
+    [react/text-input {:secure-text-entry true
+                       :auto-focus true
+                       :placeholder ""
+                       :style styles/password-text-input
+                       :on-key-press #(re-frame/dispatch [:intro-wizard/code-symbol-pressed (-> % :nativeEvent :key)])}]]
+   [react/text {:style (assoc styles/wizard-text :margin-bottom 16)} (i18n/label :t/password-description)]])
 
 (defn create-code [{:keys [key-code encrypt-with-password?] :as wizard-state}]
   (if encrypt-with-password?
-    [react/view {:style {:flex 1 :align-items :center :justify-content :space-between}}
-     [react/text-input {:secure-text-entry true
-                        :auto-focus true
-                        :placeholder ""
-                        :style styles/password-text-input
-                        :on-key-press #(re-frame/dispatch [:intro-wizard/code-symbol-pressed (-> % :nativeEvent :key)])}]
-     [react/text {:style (assoc styles/wizard-text :margin-bottom 16)} (i18n/label :t/password-description)]]
+    [password-container]
     [numpad-container key-code false]))
 
 (defn confirm-code [{:keys [key-code confirm-failure? encrypt-with-password?] :as wizard-state}]
   (if encrypt-with-password?
-    [react/view {:style {:flex 1 :align-items :center :justify-content :space-between}}
-     [react/text-input {:secure-text-entry true
-                        :auto-focus true
-                        :placeholder ""
-                        :style styles/password-text-input
-                        :on-key-press #(re-frame/dispatch [:intro-wizard/code-symbol-pressed (-> % :nativeEvent :key)])}]
-     [react/text {:style  (assoc styles/wizard-text :margin-bottom 16)} (i18n/label :t/password-description)]]
+    [password-container]
     [numpad-container key-code confirm-failure?]))
 
 (defn enable-fingerprint []
@@ -198,7 +212,12 @@
                                        :color colors/white}])
 
 (defn bottom-bar [{:keys [step generating-keys? encrypt-with-password?] :as wizard-state}]
-  [react/view {:style {:margin-bottom 32 :align-items :center}}
+  [react/view {:style {:margin-bottom (if (or (#{2 3} step)
+                                              (and (#{4 5} step)
+                                                   encrypt-with-password?))
+                                        20
+                                        32)
+                       :align-items :center}}
    (cond generating-keys?
          [react/activity-indicator {:animating true
                                     :size      :large}]
@@ -228,39 +247,44 @@
      [components.common/button {:button-style (assoc styles/bottom-button :margin-top 20)
                                 :label (i18n/label :t/maybe-later)
                                 :on-press #(re-frame/dispatch [:intro-wizard/step-forward-pressed {:skip? true}])
-                                :background? false}]) (when (= 1 step)
-                                                        [react/text {:style (assoc styles/wizard-text :margin-top 20)}
-                                                         (i18n/label (if generating-keys? :t/generating-keys
-                                                                         :t/this-will-take-few-seconds))])])
+                                :background? false}])
+   (when (= 1 step)
+     [react/text {:style (assoc styles/wizard-text :margin-top 20)}
+      (i18n/label (if generating-keys? :t/generating-keys
+                      :t/this-will-take-few-seconds))])])
 
 (defn top-bar [{:keys [step encrypt-with-password?]}]
-  [react/view {:style {:margin-top   16
-                       :margin-horizontal 32}}
+  (let [hide-subtitle? (or (= step 5)
+                           (and (#{4 5} step) encrypt-with-password?))]
+    [react/view {:style {:margin-top   16
+                         :margin-horizontal 32}}
 
-   [react/text {:style styles/wizard-title}
-    (i18n/label (keyword (str "intro-wizard-title" (when  (and (#{4 5} step) encrypt-with-password?)
-                                                     "-alt") step)))]
-   (cond (#{2 3} step)
-         ; Use nested text for the "Learn more" link
-         [react/nested-text {:style styles/wizard-text}
-          (str (i18n/label (keyword (str "intro-wizard-text" step))) " ")
-          [{:on-press #(re-frame/dispatch [:bottom-sheet/show-sheet :learn-more
-                                           {:title (i18n/label (if (= step 2) :t/about-names-title :t/about-key-storage-title))
-                                            :content  (i18n/label (if (= step 2) :t/about-names-content :t/about-key-storage-content))}])
-            :style {:color colors/blue}}
-           (i18n/label :learn-more)]]
-         :else
-         [react/text {:style styles/wizard-text}
-          (if (or (= 5 step) (and (= 4 step) encrypt-with-password?))
-            " "
-            (i18n/label (keyword (str "intro-wizard-text" step))))]
-         :else nil)])
+     [react/text {:style (cond-> styles/wizard-title
+                           hide-subtitle?
+                           (assoc :margin-bottom 0))}
+      (i18n/label (keyword (str "intro-wizard-title" (when  (and (#{4 5} step) encrypt-with-password?)
+                                                       "-alt") step)))]
+     (cond (#{2 3} step)
+           ; Use nested text for the "Learn more" link
+           [react/nested-text {:style styles/wizard-text}
+            (str (i18n/label (keyword (str "intro-wizard-text" step))) " ")
+            [{:on-press #(re-frame/dispatch [:bottom-sheet/show-sheet :learn-more
+                                             {:title (i18n/label (if (= step 2) :t/about-names-title :t/about-key-storage-title))
+                                              :content  (i18n/label (if (= step 2) :t/about-names-content :t/about-key-storage-content))}])
+              :style {:color colors/blue}}
+             (i18n/label :learn-more)]]
+           (not hide-subtitle?)
+           [react/text {:style styles/wizard-text}
+            (i18n/label (keyword (str "intro-wizard-text" step)))]
+           :else nil)]))
 
 (defview wizard []
-  (letsubs [{:keys [step generating-keys?] :as wizard-state} [:intro-wizard]]
+  (letsubs [{:keys [step generating-keys?] :as wizard-state} [:intro-wizard]
+            {view-height :height} [:dimensions/window]]
     [react/keyboard-avoiding-view {:style {:flex 1}}
      [toolbar/toolbar
-      {:style {:border-bottom-width 0}}
+      {:style {:border-bottom-width 0
+               :margin-top 0 #_32}}
       (when-not (#{6 7} step)
         (toolbar/nav-button
          (actions/back #(re-frame/dispatch
@@ -271,8 +295,8 @@
       [top-bar wizard-state]
       (case step
         1 [generate-key]
-        2 [choose-key wizard-state]
-        3 [select-key-storage wizard-state]
+        2 [choose-key wizard-state view-height]
+        3 [select-key-storage wizard-state view-height]
         4 [create-code wizard-state]
         5 [confirm-code wizard-state]
         6 [enable-fingerprint]
