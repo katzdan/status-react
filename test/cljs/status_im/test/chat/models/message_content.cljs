@@ -19,14 +19,3 @@
     (is (:rtl? (message-content/enrich-content {:text "أنت محظوظ اليوم!"})))
     (is (:rtl? (message-content/enrich-content {:text "أنت محظوظ اليوم! You are lucky today"})))
     (is (:rtl? (message-content/enrich-content {:text "יש לך מזל היום!"})))))
-
-(deftest build-render-recipe-test
-  (testing "Render tree is build from text"
-    (is (not (:render-recipe (message-content/enrich-content {:text "Plain message"}))))
-    (is (= '(["Test " :text]
-             ["#status" :tag]
-             [" one three " :text]
-             ["#core-chat (@developer)!" :bold]
-             [" By the way, " :text]
-             ["nice link(https://link.com)" :italic])
-           (:render-recipe (message-content/enrich-content {:text "Test #status one three *#core-chat (@developer)!* By the way, ~nice link(https://link.com)~"}))))))
