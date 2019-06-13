@@ -1,5 +1,6 @@
 (ns status-im.ui.screens.chat.message.message
   (:require [re-frame.core :as re-frame]
+            [taoensso.timbre :as log]
             [status-im.chat.commands.core :as commands]
             [status-im.chat.commands.protocol :as protocol]
             [status-im.chat.commands.receiving :as commands-receiving]
@@ -57,7 +58,9 @@
 (defn message-view
   [{:keys [timestamp-str outgoing content content-type] :as message} message-content {:keys [justify-timestamp?]}]
   [react/view (style/message-view message)
-   message-content
+   (do
+     (log/info "igorm -> mc" message-content)
+     message-content)
    [message-timestamp timestamp-str justify-timestamp? outgoing (or (get content :command-path)
                                                                     (get content :command-ref))
     content content-type]])
@@ -92,7 +95,8 @@
         [quoted-message (:response-to content) outgoing current-public-key])
       (apply react/nested-text
              (cond-> {:style (style/text-message collapsible? outgoing)
-                      :text-break-strategy :balanced}
+                      :text-break-strategy :balanced
+                      :parseBasicMarkdown true}
                (and collapsible? (not expanded?))
                (assoc :number-of-lines constants/lines-collapse-threshold))
              (conj (if-let [render-recipe (:render-recipe content)]
