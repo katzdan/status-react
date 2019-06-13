@@ -61,26 +61,25 @@
   ([content]
    (build-render-recipe content nil))
   ([{:keys [text metadata] :as content} metadata-keys]
-   (when platform/desktop?
-     (when metadata
-       (let [[offset builder] (->> (sorted-ranges content metadata-keys)
-                                   (reduce (fn [[offset builder] [[start end] kind]]
-                                             (if (< start offset)
-                                               [offset builder] ;; next record is nested, not allowed, discard
-                                               (let [record-text (subs text start end)
-                                                     record      (if (styling-keys kind)
-                                                                   [(subs record-text 1
-                                                                          (dec (count record-text))) kind]
-                                                                   [record-text kind])]
-                                                 (if-let [padding (when-not (= offset start)
-                                                                    [(subs text offset start) :text])]
-                                                   [end (conj builder padding record)]
-                                                   [end (conj builder record)]))))
-                                           [0 []]))
-             end-record       (when-not (= offset (count text))
-                                [(subs text offset (count text)) :text])]
-         (cond-> builder
-           end-record (conj end-record)))))))
+   (when metadata
+     (let [[offset builder] (->> (sorted-ranges content metadata-keys)
+                                 (reduce (fn [[offset builder] [[start end] kind]]
+                                           (if (< start offset)
+                                             [offset builder] ;; next record is nested, not allowed, discard
+                                             (let [record-text (subs text start end)
+                                                   record      (if (styling-keys kind)
+                                                                 [(subs record-text 1
+                                                                        (dec (count record-text))) kind]
+                                                                 [record-text kind])]
+                                               (if-let [padding (when-not (= offset start)
+                                                                  [(subs text offset start) :text])]
+                                                 [end (conj builder padding record)]
+                                                 [end (conj builder record)]))))
+                                         [0 []]))
+           end-record       (when-not (= offset (count text))
+                              [(subs text offset (count text)) :text])]
+       (cond-> builder
+         end-record (conj end-record))))))
 
 (defn enrich-content
   "Enriches message content with `:metadata`, `:render-recipe` and `:rtl?` information.
@@ -94,7 +93,9 @@
                                  [(clear-ranges matches text) (assoc metadata type matches)]
                                  [text metadata]))
                              [text {}]
-                             (into stylings actions))]
+                             (if platform/desktop?
+                               (into stylings actions)
+                               actions))]
     (cond-> content
       (seq metadata) (as-> content
                            (assoc content :metadata metadata)
