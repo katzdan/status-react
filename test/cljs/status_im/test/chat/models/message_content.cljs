@@ -5,11 +5,9 @@
 (deftest enrich-string-content-test
   (testing "Text content of the message is enriched correctly"
     (is (not (:metadata (message-content/enrich-content {:text "Plain message"}))))
-    (is (= {:bold [[5 14]]}
-           (:metadata (message-content/enrich-content {:text "Some *styling* present"}))))
-    (is (= {:bold [[5 14]]
-            :tag  [[28 33] [38 43]]}
+    (is (= {:tag  [[28 33] [38 43]]}
            (:metadata (message-content/enrich-content {:text "Some *styling* present with #tag1 and #tag2 as well"})))))
+
   (testing "right to left is correctly identified"
     (is (not (:rtl? (message-content/enrich-content {:text "You are lucky today!"}))))
     (is (not (:rtl? (message-content/enrich-content {:text "42"}))))
